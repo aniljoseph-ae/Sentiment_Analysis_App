@@ -141,7 +141,7 @@ if st.button("🔍 Analyze"):
             st.markdown(f"**➤ Sentence:** {details['sentence']}")
             st.markdown(f"**➤ Sentiment:** {details['sentiment']}")
             st.write("---")
-        st.write("### Debugging Information")
-        st.write("Extracted Subthemes:", result)
+        # st.write("### Debugging Information")
+        # st.write("Extracted Subthemes:", result)
     else:
         st.warning("⚠️ Please enter a review for analysis.")
