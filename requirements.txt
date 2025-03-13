@@ -1,0 +1,8 @@
+streamlit
+tornado
+asyncio
+transformers
+torch
+nltk
+spacy
+tornado==6.1
