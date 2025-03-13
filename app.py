@@ -3,9 +3,11 @@ import asyncio
 import streamlit as st
 import re
 import nltk
-import spacy
 import torch
 from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk import pos_tag, ne_chunk
+from nltk.tree import Tree
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import subprocess
 import sys
@@ -13,31 +15,25 @@ from dotenv import load_dotenv
 
 # Load API Key
 load_dotenv()
+
 try:
     asyncio.get_running_loop()
 except RuntimeError:
     asyncio.set_event_loop(asyncio.new_event_loop())
 
-
 os.environ["STREAMLIT_SERVER_PORT"] = "8501"
 
-# Download and load stopwords
+# Download necessary NLTK resources
 nltk.download("stopwords")
+nltk.download("punkt")
+nltk.download("averaged_perceptron_tagger")
+nltk.download("maxent_ne_chunker")
+nltk.download("words")
+
 stop_words = set(stopwords.words("english"))
 
-# Function to ensure the model is downloaded
-def download_spacy_model():
-    try:
-        spacy.load("en_core_web_sm")
-    except OSError:
-        subprocess.run([sys.executable, "-m", "spacy", "download", "en-core-web-sm"])
-        spacy.load("en_core_web_sm")
-
-# Call the function at the start of the app
-download_spacy_model()
-
 # Load fine-tuned BERT model and tokenizer from Hugging Face Hub
-model_name = "aniljoseph/subtheme_sentiment_BERT_finetuned"  # Replace with your actual model name on Hugging Face
+model_name = "aniljoseph/subtheme_sentiment_BERT_finetuned"  # Replace with actual model name
 try:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
@@ -48,7 +44,6 @@ except Exception as e:
 # Define unwanted entity types
 UNWANTED_ENTITIES = {"DATE", "TIME", "PERCENT", "MONEY", "QUANTITY", "ORDINAL", "CARDINAL"}
 UNWANTED_TERMS = {"days", "months", "years", "time", "weeks"}
-
 
 def predict_sentiment(text):
     """Predict sentiment using the fine-tuned BERT model."""
@@ -65,7 +60,6 @@ def predict_sentiment(text):
     labels = ["negative", "positive"]  # Assuming your model follows this order
     return labels[predicted_class]
 
-
 def clean_text(text):
     """Preprocess text: lowercase, remove special characters, and stopwords."""
     text = text.lower()
@@ -73,32 +67,52 @@ def clean_text(text):
     text = " ".join([word for word in text.split() if word not in stop_words])
     return text
 
-
 def extract_subthemes(text):
-    """Extract meaningful noun phrases while filtering out unimportant ones."""
-    doc = nlp(text)
-    named_entities = {ent.text.strip(): ent.label_ for ent in doc.ents if ent.label_ not in UNWANTED_ENTITIES}
-    noun_phrases = {chunk.text.strip(): "PRODUCT" for chunk in doc.noun_chunks}
+    """Extract meaningful noun phrases while filtering out unimportant ones using NLTK."""
+    words = word_tokenize(text)
+    pos_tags = pos_tag(words)
+    
+    # Extract Named Entities
+    named_entities = {}
+    tree = ne_chunk(pos_tags, binary=False)
+    for subtree in tree:
+        if isinstance(subtree, Tree):
+            entity_label = subtree.label()
+            entity_text = " ".join(word for word, _ in subtree.leaves())
+            if entity_label not in UNWANTED_ENTITIES:
+                named_entities[entity_text] = entity_label
+
+    # Extract Noun Phrases using Regex Parser
+    grammar = r"NP: {<DT>?<JJ>*<NN.*>+}"
+    chunk_parser = nltk.RegexpParser(grammar)
+    tree = chunk_parser.parse(pos_tags)
+    
+    noun_phrases = {}
+    for subtree in tree:
+        if isinstance(subtree, Tree) and subtree.label() == "NP":
+            phrase = " ".join(word for word, _ in subtree.leaves())
+            noun_phrases[phrase] = "PRODUCT"
+
     subthemes = {**named_entities, **noun_phrases}
+
+    # Filter unwanted terms
     filtered_subthemes = {
         k: v for k, v in subthemes.items()
         if len(k.split()) > 1 and not any(term in k.lower() for term in UNWANTED_TERMS)
     }
     return filtered_subthemes
 
-
 def analyze_review_detailed(review):
     """Analyze subthemes, extract relevant sentences, and determine sentiment."""
-    doc = nlp(review)
     subthemes = extract_subthemes(review)
-    sentences = list(doc.sents)
+    sentences = sent_tokenize(review)
 
     if not subthemes:
         return {"No Subthemes Found": {"sentence": review, "subtheme_category": "N/A", "sentiment": "neutral"}}
 
     analysis_result = {}
     for subtheme, category in subthemes.items():
-        relevant_sentence = next((sent.text for sent in sentences if subtheme.lower() in sent.text.lower()), "Not Found")
+        relevant_sentence = next((sent for sent in sentences if subtheme.lower() in sent.lower()), "Not Found")
         sentiment = predict_sentiment(relevant_sentence) if relevant_sentence != "Not Found" else "neutral"
         formatted_subtheme = subtheme.title().replace("The ", "").strip()
 
