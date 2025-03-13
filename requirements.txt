@@ -5,4 +5,5 @@ transformers
 torch
 nltk
 spacy
-tornado==6.1
+tornado
+en-core-web-sm
