@@ -27,7 +27,7 @@ os.environ["STREAMLIT_SERVER_PORT"] = "8501"
 
 nltk.download("stopwords")
 nltk.download("punkt_tab")
-nltk.download("averaged_perceptron_tagger")
+nltk.download("averaged_perceptron_tagger_eng")
 nltk.download("maxent_ne_chunker")
 nltk.download("words")
 
