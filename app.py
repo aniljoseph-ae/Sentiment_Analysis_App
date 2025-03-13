@@ -7,6 +7,8 @@ import spacy
 import torch
 from nltk.corpus import stopwords
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+import subprocess
+import sys
 
 try:
     asyncio.get_running_loop()
@@ -20,9 +22,16 @@ os.environ["STREAMLIT_SERVER_PORT"] = "8501"
 nltk.download("stopwords")
 stop_words = set(stopwords.words("english"))
 
-# Load NLP model
-# nlp = spacy.load("en_core_web_trf")  # Transformer-based SpaCy model
-nlp = spacy.load("en_core_web_sm")  # Transformer-based SpaCy model
+# Function to ensure the model is downloaded
+def download_spacy_model():
+    try:
+        spacy.load("en_core_web_sm")
+    except OSError:
+        subprocess.run([sys.executable, "-m", "spacy", "download", "en-core-web-sm"])
+        spacy.load("en_core_web_sm")
+
+# Call the function at the start of the app
+download_spacy_model()
 
 # Load fine-tuned BERT model and tokenizer from Hugging Face Hub
 model_name = "aniljoseph/subtheme_sentiment_BERT_finetuned"  # Replace with your actual model name on Hugging Face
