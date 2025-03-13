@@ -26,7 +26,7 @@ os.environ["STREAMLIT_SERVER_PORT"] = "8501"
 # Download necessary NLTK resources
 
 nltk.download("stopwords")
-nltk.download("punkt")
+nltk.download("punkt_tab")
 nltk.download("averaged_perceptron_tagger")
 nltk.download("maxent_ne_chunker")
 nltk.download("words")
