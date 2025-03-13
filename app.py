@@ -9,7 +9,10 @@ from nltk.corpus import stopwords
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import subprocess
 import sys
+from dotenv import load_dotenv
 
+# Load API Key
+load_dotenv()
 try:
     asyncio.get_running_loop()
 except RuntimeError:
