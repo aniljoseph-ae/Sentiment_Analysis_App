@@ -24,6 +24,7 @@ except RuntimeError:
 os.environ["STREAMLIT_SERVER_PORT"] = "8501"
 
 # Download necessary NLTK resources
+
 nltk.download("stopwords")
 nltk.download("punkt")
 nltk.download("averaged_perceptron_tagger")
