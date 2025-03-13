@@ -2,6 +2,7 @@ streamlit
 tornado
 asyncio
 transformers
+python-dotenv
 torch
 nltk
 tornado
