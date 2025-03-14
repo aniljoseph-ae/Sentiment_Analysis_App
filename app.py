@@ -126,6 +126,8 @@ def analyze_review_detailed(review):
                 "sentiment": sentiment
             }
     return analysis_result
+    # recommendataions:
+    1. batch data
 
 # --------------- Streamlit App UI ----------------
 st.title("Subtheme Sentiment Analysis")
