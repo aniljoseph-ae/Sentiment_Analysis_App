@@ -127,7 +127,7 @@ def analyze_review_detailed(review):
             }
     return analysis_result
     # recommendataions:
-    1. batch data
+    # 1. batch data: provide the data as batch ti improve the runtime
 
 # --------------- Streamlit App UI ----------------
 st.title("Subtheme Sentiment Analysis")
